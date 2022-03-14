@@ -1,8 +1,41 @@
 app:
-  # Should be the same as backend.baseUrl when using the `app-backend` plugin
-  baseUrl: http://localhost:7007
+  title: ${TEAMCLOUD_ORGANIZATION_NAME}
+  baseUrl: https://${WEBSITE_HOSTNAME}
+
+organization:
+  name: ${TEAMCLOUD_ORGANIZATION_NAME}
 
 backend:
-  baseUrl: http://localhost:7007
+  baseUrl: https://${WEBSITE_HOSTNAME}
   listen:
     port: 7007
+  
+  database:
+    client: pg
+    connection:
+      host: ${POSTGRES_HOST}
+      port: ${POSTGRES_PORT}
+      user: ${POSTGRES_USER}
+      password: ${POSTGRES_PASSWORD}
+      ssl: true
+
+auth:
+  environment: development
+  providers:
+    microsoft:
+      development:
+        clientId: ${AUTH_MICROSOFT_CLIENT_ID}
+        clientSecret: ${AUTH_MICROSOFT_CLIENT_SECRET}
+        tenantId: ${AUTH_MICROSOFT_TENANT_ID}
+
+techdocs:
+  builder: 'local'
+  generator:
+    runIn: 'local'
+  publisher:
+    type: 'azureBlobStorage'
+    azureBlobStorage:
+      containerName: 'techdocs'
+      credentials:
+        accountName: ${STORAGE_ACCOUNT_NAME}
+        accountKey: ${STORAGE_ACCOUNT_KEY}

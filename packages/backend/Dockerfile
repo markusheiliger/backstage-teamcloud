@@ -19,16 +19,23 @@ WORKDIR /app
 COPY yarn.lock package.json packages/backend/dist/skeleton.tar.gz ./
 RUN tar xzf skeleton.tar.gz && rm skeleton.tar.gz
 
-# install sqlite3 dependencies
+# Install packages:
+# - sqlite3 dependencies
+# - mkdocs for techdoc generation
 RUN apt-get update && \
-    apt-get install -y libsqlite3-dev python3 cmake g++ && \
+    apt-get install -y libsqlite3-dev python3 python3-pip cmake g++ && \
+    pip3 install mkdocs-techdocs-core==0.2.2 && \
     rm -rf /var/lib/apt/lists/* && \
     yarn config set python /usr/bin/python3
 
 RUN yarn install --frozen-lockfile --production --network-timeout 300000 && rm -rf "$(yarn cache dir)"
 
 # Then copy the rest of the backend bundle, along with any other files we might want.
-COPY packages/backend/dist/bundle.tar.gz app-config.yaml ./
+COPY packages/backend/dist/bundle.tar.gz app-config.yaml app-config.*.yaml ./
 RUN tar xzf bundle.tar.gz && rm bundle.tar.gz
+
+# If using PostgreSql instead of sqlite3 we require SSL 
+# transport encryption by default
+ENV PGSSLMODE=require
 
 CMD ["node", "packages/backend", "--config", "app-config.yaml"]
