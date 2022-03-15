@@ -39,3 +39,4 @@ techdocs:
       credentials:
         accountName: ${STORAGE_ACCOUNT_NAME}
         accountKey: ${STORAGE_ACCOUNT_KEY}
+
