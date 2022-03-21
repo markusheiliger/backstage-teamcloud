@@ -17,26 +17,32 @@ var backstageDatabasePassword = '${guid(resourceGroup().id)}'
 
 var resourceName = 'bs${uniqueString(resourceGroup().id)}'
 
-resource backstagePostgreSql 'Microsoft.DBforPostgreSQL/servers@2017-12-01' = {
+resource backstagePostgreSql 'Microsoft.DBforPostgreSQL/flexibleServers@2021-06-01' = {
   name: resourceName
   location: location
   sku: {
-    name: 'B_Gen5_1'
+    name: 'Standard_B2s'
+    tier: 'Burstable'
   }
   properties:{
-    createMode: 'Default'
     administratorLogin: backstageDatabaseUsername
     administratorLoginPassword: backstageDatabasePassword
-    sslEnforcement: 'Enabled'
-    version: '11'
-    storageProfile: {
-      storageAutogrow: 'Enabled'
-      backupRetentionDays: 7
+    version: '13'
+    publicNetworkAccess: 'Enabled'
+    storage: {
+        storageSizeGB: 32
     }
+    backup: {
+        backupRetentionDays: 7
+        geoRedundantBackup: 'Disabled'
+    }
+    highAvailability: {
+        mode: 'Disabled'
+    }  
   }
 
   resource allowAllWindowsAzureIps 'firewallRules' = {
-    name: 'AllowAllWindowsAzureIps' 
+    name: 'AllowAllAzureServicesAndResourcesWithinAzureIps_2022-3-17_12-3-56' 
     properties: {
       endIpAddress: '0.0.0.0'
       startIpAddress: '0.0.0.0'
@@ -108,7 +114,7 @@ resource backstageAppService 'microsoft.web/sites@2021-03-01' = {
         }
         {
           name: 'POSTGRES_USER'
-          value: '${backstageDatabaseUsername}@${backstagePostgreSql.properties.fullyQualifiedDomainName}'
+          value: '${backstageDatabaseUsername}'
         }
         {
           name: 'POSTGRES_PASSWORD'
@@ -165,9 +171,11 @@ resource backstageAppService 'microsoft.web/sites@2021-03-01' = {
       }
     }
   }
-
 }
 
+resource publishingcreds 'Microsoft.Web/sites/config@2021-01-01' existing = {
+  name: '${resourceName}/publishingcredentials'
+}
 
-
-output dummy object = deployment()
+output portalUrl string = 'https://${backstageAppService.properties.defaultHostName}'
+output portalUpdate string = 'https://${list(publishingcreds.id,'2021-01-01').properties.scmUri}/docker/hook'

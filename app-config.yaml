@@ -63,6 +63,33 @@ scaffolder:
   # see https://backstage.io/docs/features/software-templates/configuration for software template options
 
 catalog:
+  processors:
+    microsoftGraphOrg:
+      providers:
+
+        - target: https://graph.microsoft.com/v1.0
+          authority: https://login.microsoftonline.com
+          tenantId: ${AUTH_MICROSOFT_TENANT_ID}
+          clientId: ${AUTH_MICROSOFT_CLIENT_ID}
+          clientSecret: ${AUTH_MICROSOFT_CLIENT_SECRET}
+
+        # Optional filter for user, see Microsoft Graph API for the syntax
+        # See https://docs.microsoft.com/en-us/graph/api/resources/user?view=graph-rest-1.0#properties
+        # and for the syntax https://docs.microsoft.com/en-us/graph/query-parameters#filter-parameter
+        # This and userGroupMemberFilter are mutually exclusive, only one can be specified
+
+        # userFilter: accountEnabled eq true and userType eq 'member'
+
+        # Optional filter for users, use group membership to get users.
+        # This and userFilter are mutually exclusive, only one can be specified
+
+        # userGroupMemberFilter: "displayName eq 'Backstage Users'"
+
+        # Optional filter for group, see Microsoft Graph API for the syntax
+        # See https://docs.microsoft.com/en-us/graph/api/resources/group?view=graph-rest-1.0#properties
+
+        # groupFilter: securityEnabled eq false and mailEnabled eq true and groupTypes/any(c:c+eq+'Unified')
+
   import:
     entityFilename: catalog-info.yaml
     pullRequestBranchName: backstage-integration

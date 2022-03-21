@@ -61,8 +61,17 @@ if [[ " $* " == *" release "* ]]; then
 
 elif [[ " $* " == *" deploy "* ]]; then
 
+	if [[ " $* " == *" reset "* ]] && [[ "$(az group exists --subscription $subscription_id --name $resource_group)" == "true" ]]; then
+
+		header "Resetting resource group $resource_group ..." \
+			&& az group delete --subscription $subscription_id --name $resource_group --yes -o none \
+			&& az group create --subscription $subscription_id --name $resource_group --location eastus -o none \
+			&& echo 'done'
+
+	fi 
+
 	header "Deploying to resource group $resource_group ..." \
-		&& az deployment group create --subscription $subscription_id --resource-group $resource_group --mode Complete --template-file ./resources/backstage.bicep -o none \
+		&& az deployment group create --subscription $subscription_id --resource-group $resource_group --mode Complete --template-file ./resources/backstage.bicep --query 'properties.outputs' \
 			--parameters registryServer=$container_registry \
 			--parameters registryUsername=$container_registry_username \
 			--parameters registryPassword=$container_registry_password \
