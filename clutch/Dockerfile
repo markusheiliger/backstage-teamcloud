@@ -1,0 +1,2 @@
+FROM lyft/clutch:latest
+

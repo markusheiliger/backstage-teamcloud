@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 bin_dir=`cd "$(dirname "$BASH_SOURCE[0]")"; pwd`
 subscription_id="672fab42-9efc-4f65-9b3c-dd6144e4ef60"
-resource_group="backstage-$(whoami)"
+portal_type=$(basename "$bin_dir")
+portal_identity="d51c023e-dd7e-4ee3-a3ff-01f72bf135a6"
+resource_group="$portal_type-$(whoami)"
 
 container_registry="teamcloud.azurecr.io"
 container_registry_username="TeamCloud"
 container_registry_password=$(az acr credential show --subscription 'b6de8d3f-8477-45fe-8d60-f30c6db2cb06' --resource-group 'TeamCloud-Registry' --name 'TeamCloud' --query 'passwords[0].value' -o tsv)
 
-image_name_dev="teamcloud-dev/tcportal-backstage-$(whoami)"
-image_name_rel="teamcloud/tcportal-backstage"
+image_name_dev="teamcloud-dev/tcportal-$portal_type-$(whoami)"
+image_name_rel="teamcloud/tcportal-$portal_type"
 image_tag=$(date +%s)
 
 header() {
@@ -71,21 +73,24 @@ elif [[ " $* " == *" deploy "* ]]; then
 	fi 
 
 	header "Deploying to resource group $resource_group ..." \
-		&& az deployment group create --subscription $subscription_id --resource-group $resource_group --mode Complete --template-file ./resources/backstage.bicep --query 'properties.outputs' \
+		&& az deployment group create --subscription $subscription_id --resource-group $resource_group --mode Complete --template-file ./resources/portal.bicep --query 'properties.outputs' \
 			--parameters registryServer=$container_registry \
 			--parameters registryUsername=$container_registry_username \
 			--parameters registryPassword=$container_registry_password \
 			--parameters containerImage=$image_name_dev:$image_tag \
-			--parameters teamcloudOrganizationName=Contoso \
-			--parameters azureClientId=d51c023e-dd7e-4ee3-a3ff-01f72bf135a6 \
-			--parameters azureClientSecret=sgm7Q~AyyVs4IKeXA9vQQDyjx7bwa0.lv72LR \
+			--parameters teamcloudOrganizationName=$(whoami) \
+			--parameters azureClientId=$portal_identity \
+			--parameters azureClientSecret=$(az ad app credential reset --id $portal_identity --query password -o tsv) \
 		&& echo 'done'
 
 else
 
 	header "Run container $container_registry/$image_name_dev:$image_tag locally ..." \
-		&& ( [ ! -z "$(docker ps -a | grep backstage)" ] && docker container rm backstage -f > /dev/null || true ) \
-		&& docker run -d --name backstage -p 7007:7007 \
+		&& ( [ ! -z "$(docker ps -a | grep $porta_type)" ] && docker container rm $porta_type -f > /dev/null || true ) \
+		&& docker run -d --name $porta_type -p 7007:7007 \
+			--env teamcloudOrganizationName=$(whoami) \
+			--env azureClientId=$portal_identity \
+			--env azureClientSecret=$(az ad app credential reset --id $portal_identity --query password -o tsv) \
 			$container_registry/$image_name_dev:$image_tag \
 			node packages/backend --config app-config.yaml --config app-config.local.yaml > /dev/null \
 		&& echo "done"		
